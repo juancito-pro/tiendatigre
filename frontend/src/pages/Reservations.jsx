@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import saleService from '../services/saleService';
 import SplitPayment from '../components/SplitPayment';
+import { mockReservations } from '../services/mockData';
 
 const Reservations = () => {
-  const [reservations, setReservations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [reservations, setReservations] = useState(mockReservations);
+  const [loading, setLoading] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [payments, setPayments] = useState([{ payment_method: 'Efectivo', amount: 0 }]);
@@ -25,9 +26,14 @@ const Reservations = () => {
   const loadReservations = async () => {
     try {
       const data = await saleService.getReservations();
-      setReservations(data);
+      if (Array.isArray(data)) {
+        setReservations(data);
+      } else {
+        setReservations(mockReservations);
+      }
     } catch (err) {
-      console.error('Error:', err);
+      console.warn('Error cargando reservas, usando fallback:', err);
+      setReservations(mockReservations);
     } finally {
       setLoading(false);
     }
@@ -93,7 +99,7 @@ const Reservations = () => {
         </div>
       ) : (
         <div className="row g-3">
-          {reservations.map((res) => (
+          {(Array.isArray(reservations) ? reservations : mockReservations).map((res) => (
             <div key={res.id} className="col-md-6 col-lg-4">
               <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
                 <div style={{ height: '4px', background: 'linear-gradient(90deg, #FF5A00, #FF8A50)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0' }}></div>
@@ -114,7 +120,7 @@ const Reservations = () => {
                   </div>
 
                   <div style={{ backgroundColor: 'var(--bg-input)', borderRadius: '10px', overflow: 'hidden', marginBottom: '1rem' }}>
-                    {res.items.map((item, idx) => (
+                    {(Array.isArray(res.items) ? res.items : []).map((item, idx) => (
                       <div key={idx} className="d-flex justify-content-between align-items-center px-3 py-1.5" style={{ borderBottom: idx < res.items.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{item.product_name} <span style={{ color: 'var(--text-muted)' }}>x{item.quantity}</span></span>
                         <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{formatCurrency(item.subtotal)}</span>

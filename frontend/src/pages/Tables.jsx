@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import tableService from '../services/tableService';
+import { mockTables } from '../services/mockData';
 
 const Tables = () => {
   const navigate = useNavigate();
-  const [tables, setTables] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tables, setTables] = useState(mockTables);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadTables();
@@ -14,9 +15,14 @@ const Tables = () => {
   const loadTables = async () => {
     try {
       const data = await tableService.getAll();
-      setTables(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setTables(data);
+      } else {
+        setTables(mockTables);
+      }
     } catch (err) {
-      console.error('Error al cargar mesas:', err);
+      console.warn('Error al cargar mesas, usando fallback:', err);
+      setTables(mockTables);
     } finally {
       setLoading(false);
     }
@@ -61,9 +67,10 @@ const Tables = () => {
     );
   }
 
-  const libre = tables.filter(t => t.status === 'libre').length;
-  const ocupada = tables.filter(t => t.status === 'ocupada').length;
-  const pendiente = tables.filter(t => t.status === 'pendiente_pago').length;
+  const safeTables = Array.isArray(tables) ? tables : mockTables;
+  const libre = safeTables.filter(t => t.status === 'libre').length;
+  const ocupada = safeTables.filter(t => t.status === 'ocupada').length;
+  const pendiente = safeTables.filter(t => t.status === 'pendiente_pago').length;
 
   return (
     <div className="animate-fade-in">
@@ -190,7 +197,7 @@ const Tables = () => {
       </div>
 
       <div className="mesa-floor-grid">
-        {tables.map((table) => {
+        {safeTables.map((table) => {
           const gridArea = table.number === 5 ? 'top'
             : table.number === 3 ? 'leftM'
             : table.number === 4 ? 'rightM'

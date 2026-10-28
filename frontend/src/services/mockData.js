@@ -586,3 +586,113 @@ export const mockDashboard = {
   }
 ]
 };
+
+export const mockSales = [
+  {
+    id: 101,
+    code: 'V-001',
+    sale_type: 'para_llevar',
+    total: 38,
+    payment_method: 'Efectivo',
+    mesa_id: null,
+    mesa_numero: null,
+    created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+    status: 'completada'
+  },
+  {
+    id: 102,
+    code: 'V-002',
+    sale_type: 'en_mesa',
+    total: 42,
+    payment_method: 'QR',
+    mesa_id: 2,
+    mesa_numero: 2,
+    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+    status: 'completada'
+  },
+  {
+    id: 103,
+    code: 'V-003',
+    sale_type: 'para_llevar',
+    total: 21,
+    payment_method: 'Efectivo',
+    mesa_id: null,
+    mesa_numero: null,
+    created_at: new Date(Date.now() - 3600000 * 1).toISOString(),
+    status: 'completada'
+  },
+  {
+    id: 104,
+    code: 'V-004',
+    sale_type: 'en_mesa',
+    total: 64,
+    payment_method: 'Efectivo',
+    mesa_id: 1,
+    mesa_numero: 1,
+    created_at: new Date(Date.now() - 1800000).toISOString(),
+    status: 'completada'
+  },
+  {
+    id: 105,
+    code: 'V-005',
+    sale_type: 'para_llevar',
+    total: 17,
+    payment_method: 'QR',
+    mesa_id: null,
+    mesa_numero: null,
+    created_at: new Date(Date.now() - 600000).toISOString(),
+    status: 'completada'
+  }
+];
+
+export const mockDailyReport = {
+  stats: {
+    total_sales: 14,
+    total_revenue: 820,
+    takeaway_count: 6,
+    mesa_count: 8,
+    cash_total: 490,
+    qr_total: 330
+  },
+  sales: [
+    { id: 1, code: 'V-001', time: '12:30', sale_type: 'para_llevar', total: 38, payment_method: 'Efectivo', mesa_numero: null, items_summary: '2x Salchipapa normal' },
+    { id: 2, code: 'V-002', time: '13:10', sale_type: 'en_mesa', total: 42, payment_method: 'QR', mesa_numero: 2, items_summary: '1x Hamburguesa Doble, 1x Coca Cola' },
+    { id: 3, code: 'V-003', time: '13:45', sale_type: 'para_llevar', total: 21, payment_method: 'Efectivo', mesa_numero: null, items_summary: '1x Salchipapa Entera' },
+    { id: 4, code: 'V-004', time: '14:20', sale_type: 'en_mesa', total: 64, payment_method: 'Efectivo', mesa_numero: 1, items_summary: '2x Mixta, 2x Jugo' },
+    { id: 5, code: 'V-005', time: '15:00', sale_type: 'para_llevar', total: 17, payment_method: 'QR', mesa_numero: null, items_summary: '1x Salchipapa normal' }
+  ]
+};
+
+export const mockTopProductsReport = [
+  { id: 1, name: 'Salchipapa normal', category_name: 'Salchipapas', total_quantity: 24, total_revenue: 408 },
+  { id: 2, name: 'Salchipapa Entera', category_name: 'Salchipapas', total_quantity: 18, total_revenue: 378 },
+  { id: 3, name: 'Mixta', category_name: 'Hamburguesas', total_quantity: 15, total_revenue: 315 },
+  { id: 4, name: 'Hamburguesas Con Papas', category_name: 'Hamburguesas', total_quantity: 12, total_revenue: 204 },
+  { id: 5, name: 'Hamburguesa suelta', category_name: 'Sueltos', total_quantity: 10, total_revenue: 100 }
+];
+
+export const mockReservations = [
+  {
+    id: 201,
+    customer_name: 'Carlos Mendoza',
+    phone: '71234567',
+    notes: 'Reserva para las 14:00 - 2 Salchipapas',
+    total: 38,
+    status: 'pendiente',
+    created_at: new Date().toISOString(),
+    items: [
+      { id: 1, product_id: 1, product_name: 'Salchipapa normal', quantity: 2, unit_price: 17, subtotal: 34 }
+    ]
+  }
+];
+
+export const mockTodaySummary = {
+  total_ventas: 14,
+  total_ingresos: 820,
+  efectivo: 490,
+  qr: 330,
+  para_llevar: 6,
+  en_mesa: 8,
+  caja_abierta: true
+};
+

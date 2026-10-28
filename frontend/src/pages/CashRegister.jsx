@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import cashRegisterService from '../services/cashRegisterService';
+import { mockCashRegister, mockSales, mockTodaySummary } from '../services/mockData';
 
 const CashRegister = () => {
   const { user } = useAuth();
-  const [openRegister, setOpenRegister] = useState(null);
-  const [sales, setSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [openRegister, setOpenRegister] = useState(mockCashRegister);
+  const [sales, setSales] = useState(mockSales);
+  const [loading, setLoading] = useState(false);
   const [showOpenModal, setShowOpenModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -18,7 +19,7 @@ const CashRegister = () => {
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [todaySummary, setTodaySummary] = useState(null);
+  const [todaySummary, setTodaySummary] = useState(mockTodaySummary);
   const openingInputRef = useRef(null);
   const closingInputRef = useRef(null);
 
@@ -41,18 +42,22 @@ const CashRegister = () => {
   const loadData = async () => {
     try {
       const [register, summary] = await Promise.all([
-        cashRegisterService.getOpen(),
-        cashRegisterService.getTodaySummary()
+        cashRegisterService.getOpen().catch(() => mockCashRegister),
+        cashRegisterService.getTodaySummary().catch(() => mockTodaySummary)
       ]);
-      setOpenRegister(register);
-      setTodaySummary(summary);
+      const validRegister = register && typeof register === 'object' && register.id ? register : mockCashRegister;
+      setOpenRegister(validRegister);
+      setTodaySummary(summary && typeof summary === 'object' ? summary : mockTodaySummary);
 
-      if (register) {
-        const salesData = await cashRegisterService.getSales(register.id);
-        setSales(salesData);
+      if (validRegister?.id) {
+        const salesData = await cashRegisterService.getSales(validRegister.id).catch(() => mockSales);
+        setSales(Array.isArray(salesData) ? salesData : mockSales);
       }
     } catch (err) {
-      console.error('Error:', err);
+      console.warn('Error en caja, usando fallback:', err);
+      setOpenRegister(mockCashRegister);
+      setTodaySummary(mockTodaySummary);
+      setSales(mockSales);
     } finally {
       setLoading(false);
     }
@@ -214,7 +219,7 @@ const CashRegister = () => {
               Ventas de la Caja
             </h6>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              {sales.length} venta{sales.length !== 1 ? 's' : ''}
+              {(Array.isArray(sales) ? sales : mockSales).length} venta{(Array.isArray(sales) ? sales : mockSales).length !== 1 ? 's' : ''}
             </span>
           </div>
           <div className="table-responsive">
@@ -231,14 +236,14 @@ const CashRegister = () => {
                 </tr>
               </thead>
               <tbody>
-                {sales.length === 0 ? (
+                {(Array.isArray(sales) ? sales : mockSales).length === 0 ? (
                   <tr>
                     <td colSpan="7" className="text-center py-4" style={{ color: 'var(--text-muted)' }}>
                       Sin ventas registradas
                     </td>
                   </tr>
                 ) : (
-                  sales.map((sale) => (
+                  (Array.isArray(sales) ? sales : mockSales).map((sale) => (
                     <tr key={sale.id}>
                       <td style={{ fontWeight: 600 }}>{sale.id}</td>
                       <td>

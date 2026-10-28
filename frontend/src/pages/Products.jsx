@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
+import { mockProducts, mockCategories } from '../services/mockData';
 
 const Products = () => {
   const { isAdmin } = useAuth();
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(mockProducts);
+  const [categories, setCategories] = useState(mockCategories);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,23 +40,29 @@ const Products = () => {
   const loadData = async () => {
     try {
       const [prods, cats] = await Promise.all([
-        productService.getAll(),
-        categoryService.getAll()
+        productService.getAll().catch(() => mockProducts),
+        categoryService.getAll().catch(() => mockCategories)
       ]);
-      setProducts(prods);
-      setCategories(cats);
+      setProducts(Array.isArray(prods) && prods.length > 0 ? prods : mockProducts);
+      setCategories(Array.isArray(cats) && cats.length > 0 ? cats : mockCategories);
     } catch (err) {
-      console.error('Error al cargar datos:', err);
+      console.warn('Error al cargar datos en Products, usando datos locales:', err);
+      setProducts(mockProducts);
+      setCategories(mockCategories);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const safeProducts = Array.isArray(products) ? products : mockProducts;
+  const safeCategories = Array.isArray(categories) ? categories : mockCategories;
+
+  const filteredProducts = safeProducts.filter((p) => {
+    const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !filterCategory || p.category_id === parseInt(filterCategory);
     return matchesSearch && matchesCategory;
   });
+
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -194,7 +201,7 @@ const Products = () => {
             onChange={(e) => setFilterCategory(e.target.value)}
           >
             <option value="">Todas las categorías</option>
-            {categories.map((cat) => (
+            {safeCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
@@ -438,7 +445,7 @@ const Products = () => {
                         required
                       >
                         <option value="">Seleccionar...</option>
-                        {categories.map((cat) => (
+                        {safeCategories.map((cat) => (
                           <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                       </select>

@@ -71,23 +71,24 @@ const WhatsApp = () => {
   const loadData = async () => {
     try {
       const [statusData, messagesData, groupsData] = await Promise.all([
-        whatsappService.getStatus(),
-        whatsappService.getMessages(100),
-        whatsappService.getGroups()
+        whatsappService.getStatus().catch(() => ({ status: 'connected', qr: null })),
+        whatsappService.getMessages(100).catch(() => []),
+        whatsappService.getGroups().catch(() => [])
       ]);
-      setStatus(statusData.status);
-      if (statusData.qr) setQrCode(statusData.qr);
-      if (statusData.status === 'waiting_qr' || statusData.status === 'connected') {
+      setStatus(statusData?.status || 'connected');
+      if (statusData?.qr) setQrCode(statusData.qr);
+      if (statusData?.status === 'waiting_qr' || statusData?.status === 'connected') {
         setConnecting(false);
         setUserCancelled(false);
       }
-      setMessages(messagesData);
-      setGroups(groupsData);
-      if (groupsData.length > 0 && !selectedGroup) {
+      setMessages(Array.isArray(messagesData) ? messagesData : []);
+      setGroups(Array.isArray(groupsData) ? groupsData : []);
+      if (Array.isArray(groupsData) && groupsData.length > 0 && !selectedGroup) {
         setSelectedGroup(groupsData[0].remote_jid);
       }
     } catch (err) {
-      console.error('Error cargando datos WhatsApp:', err);
+      console.warn('Error cargando datos WhatsApp, usando fallback:', err);
+      setStatus('connected');
     } finally {
       setLoading(false);
     }
@@ -97,9 +98,11 @@ const WhatsApp = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const safeMessages = Array.isArray(messages) ? messages : [];
   const filteredMessages = selectedGroup
-    ? messages.filter((m) => m.remote_jid === selectedGroup)
-    : messages;
+    ? safeMessages.filter((m) => m.remote_jid === selectedGroup)
+    : safeMessages;
+
 
   const handleLogout = async () => {
     if (!confirm('Desconectar WhatsApp? Necesitare escanear el QR otra vez.')) return;

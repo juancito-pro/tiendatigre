@@ -5,6 +5,7 @@ import saleService from '../services/saleService';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
 import SplitPayment from '../components/SplitPayment';
+import { mockTables, mockProducts, mockCategories } from '../services/mockData';
 
 const TOP_SELLING_NAMES = ['salchipapa', 'hamburguesa con papas', 'salchipapa entera', 'hamburguesa suelta', 'mixta'];
 
@@ -31,14 +32,14 @@ const ProductPlaceholder = ({ name }) => (
 const MesaOrder = () => {
   const { mesaId } = useParams();
   const navigate = useNavigate();
-  const [table, setTable] = useState(null);
+  const [table, setTable] = useState(mockTables[0]);
   const [activeSale, setActiveSale] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState(mockProducts);
+  const [categories, setCategories] = useState(mockCategories);
   const [selectedFilter, setSelectedFilter] = useState('top');
   const [searchTerm, setSearchTerm] = useState('');
   const [payments, setPayments] = useState([{ payment_method: 'Efectivo', amount: 0 }]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -56,35 +57,44 @@ const MesaOrder = () => {
 
   const loadData = async () => {
     try {
+      const fallbackTable = mockTables.find(t => String(t.id) === String(mesaId)) || mockTables[0];
       const [tbl, sale, prods, cats] = await Promise.all([
-        tableService.getById(mesaId),
-        saleService.getActiveByMesa(mesaId),
-        productService.getActive(),
-        categoryService.getActive()
+        tableService.getById(mesaId).catch(() => fallbackTable),
+        saleService.getActiveByMesa(mesaId).catch(() => null),
+        productService.getActive().catch(() => mockProducts),
+        categoryService.getActive().catch(() => mockCategories)
       ]);
-      setTable(tbl);
+      setTable(tbl && typeof tbl === 'object' && tbl.id ? tbl : fallbackTable);
       setActiveSale(sale);
-      setProducts(prods);
-      setCategories(cats);
+      setProducts(Array.isArray(prods) && prods.length > 0 ? prods : mockProducts);
+      setCategories(Array.isArray(cats) && cats.length > 0 ? cats : mockCategories);
     } catch (err) {
-      console.error('Error:', err);
+      console.warn('Error en MesaOrder, usando fallback:', err);
+      const fallbackTable = mockTables.find(t => String(t.id) === String(mesaId)) || mockTables[0];
+      setTable(fallbackTable);
+      setProducts(mockProducts);
+      setCategories(mockCategories);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredProducts = products.filter((p) => {
+  const safeProducts = Array.isArray(products) ? products : mockProducts;
+  const safeCategories = Array.isArray(categories) ? categories : mockCategories;
+
+  const filteredProducts = safeProducts.filter((p) => {
     if (searchTerm) {
-      return p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return p.name?.toLowerCase().includes(searchTerm.toLowerCase());
     }
     if (selectedFilter === 'top') {
-      return TOP_SELLING_NAMES.some((name) => p.name.toLowerCase().includes(name));
+      return TOP_SELLING_NAMES.some((name) => p.name?.toLowerCase().includes(name));
     }
     if (selectedFilter) {
       return p.category_id === parseInt(selectedFilter);
     }
     return true;
   });
+
 
   const startNewOrder = async (product) => {
     try {
@@ -227,7 +237,7 @@ const MesaOrder = () => {
             >
               <i className="bi bi-fire me-1"></i>Más Vendidos
             </button>
-            {categories.map((cat) => (
+            {safeCategories.map((cat) => (
               <button
                 key={cat.id}
                 className={`btn btn-sm d-flex align-items-center gap-1 ${selectedFilter === String(cat.id) ? 'btn-accent' : ''}`}

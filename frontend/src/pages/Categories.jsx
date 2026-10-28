@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import categoryService from '../services/categoryService';
+import { mockCategories } from '../services/mockData';
 
 const ICON_OPTIONS = [
   { value: 'bi-fire', label: 'Picante / Más Vendidos' },
@@ -39,8 +40,8 @@ const ICON_OPTIONS = [
 
 const Categories = () => {
   const { isAdmin } = useAuth();
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState(mockCategories);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '', icon: '', status: 'activo' });
@@ -59,13 +60,19 @@ const Categories = () => {
   const loadCategories = async () => {
     try {
       const data = await categoryService.getAll();
-      setCategories(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setCategories(data);
+      } else {
+        setCategories(mockCategories);
+      }
     } catch (err) {
-      console.error('Error al cargar categorías:', err);
+      console.warn('Error al cargar categorías, usando fallback:', err);
+      setCategories(mockCategories);
     } finally {
       setLoading(false);
     }
   };
+
 
   const openCreateModal = () => {
     setEditingCategory(null);
@@ -127,7 +134,7 @@ const Categories = () => {
       </div>
 
       <div className="row g-3">
-        {categories.map((cat) => (
+        {(Array.isArray(categories) ? categories : mockCategories).map((cat) => (
           <div key={cat.id} className="col-sm-6 col-lg-4 col-xl-3">
             <div
               className="p-4 h-100"

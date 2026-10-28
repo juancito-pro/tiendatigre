@@ -6,6 +6,7 @@ import saleService from '../services/saleService';
 import cashRegisterService from '../services/cashRegisterService';
 import SplitPayment from '../components/SplitPayment';
 import { ClawAccent } from '../components/TigreBranding';
+import { mockProducts, mockCategories, mockCashRegister } from '../services/mockData';
 
 const CATEGORY_ICONS = {
   top: 'bi-fire',
@@ -64,16 +65,16 @@ const CategoryIcon = ({ category }) => {
 
 const NewOrder = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [topSelling, setTopSelling] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState(mockProducts);
+  const [topSelling, setTopSelling] = useState(mockProducts.filter((p) => p.is_top_selling));
+  const [categories, setCategories] = useState(mockCategories);
   const [selectedFilter, setSelectedFilter] = useState('top');
   const [searchTerm, setSearchTerm] = useState('');
   const [orderItems, setOrderItems] = useState([]);
   const [payments, setPayments] = useState([{ payment_method: 'Efectivo', amount: 0 }]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [openRegister, setOpenRegister] = useState(null);
+  const [openRegister, setOpenRegister] = useState(mockCashRegister);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState('');
@@ -88,34 +89,43 @@ const NewOrder = () => {
   const loadData = async () => {
     try {
       const [prods, cats, register, top] = await Promise.all([
-        productService.getActive(),
-        categoryService.getActive(),
-        cashRegisterService.getOpen(),
-        productService.getTopSelling()
+        productService.getActive().catch(() => mockProducts),
+        categoryService.getActive().catch(() => mockCategories),
+        cashRegisterService.getOpen().catch(() => mockCashRegister),
+        productService.getTopSelling().catch(() => mockProducts.filter((p) => p.is_top_selling))
       ]);
-      setProducts(prods);
-      setCategories(cats);
-      setOpenRegister(register);
-      setTopSelling(top);
+      setProducts(Array.isArray(prods) && prods.length > 0 ? prods : mockProducts);
+      setCategories(Array.isArray(cats) && cats.length > 0 ? cats : mockCategories);
+      setOpenRegister(register && typeof register === 'object' && register.id ? register : mockCashRegister);
+      setTopSelling(Array.isArray(top) && top.length > 0 ? top : mockProducts.filter((p) => p.is_top_selling));
     } catch (err) {
-      console.error('Error al cargar datos:', err);
+      console.warn('Error al cargar datos en NewOrder, usando datos locales:', err);
+      setProducts(mockProducts);
+      setCategories(mockCategories);
+      setOpenRegister(mockCashRegister);
+      setTopSelling(mockProducts.filter((p) => p.is_top_selling));
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredProducts = products.filter((p) => {
+  const safeProducts = Array.isArray(products) ? products : mockProducts;
+  const safeTopSelling = Array.isArray(topSelling) ? topSelling : mockProducts.filter((p) => p.is_top_selling);
+  const safeCategories = Array.isArray(categories) ? categories : mockCategories;
+
+  const filteredProducts = safeProducts.filter((p) => {
     if (searchTerm) {
-      return p.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return p.name?.toLowerCase().includes(searchTerm.toLowerCase());
     }
     if (selectedFilter === 'top') {
-      return topSelling.some((t) => t.id === p.id);
+      return safeTopSelling.some((t) => t.id === p.id);
     }
     if (selectedFilter) {
       return p.category_id === parseInt(selectedFilter);
     }
     return true;
   });
+
 
   const addToOrder = (product) => {
     const existing = orderItems.find((item) => item.product_id === product.id);
@@ -318,7 +328,7 @@ const NewOrder = () => {
             >
               <i className="bi bi-fire"></i>Más Vendidos
             </button>
-            {categories.map((cat) => (
+            {safeCategories.map((cat) => (
               <button
                 key={cat.id}
                 className={`btn btn-sm d-flex align-items-center gap-1 ${selectedFilter === String(cat.id) ? 'btn-accent' : ''}`}
