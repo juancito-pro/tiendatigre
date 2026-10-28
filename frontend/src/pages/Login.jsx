@@ -7,7 +7,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginDirecto } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +17,12 @@ const Login = () => {
     try {
       await login(username, password);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al iniciar sesión');
+      // Si el backend no responde (ej. Vercel estático), entrar de inmediato con modo directo
+      if (loginDirecto) {
+        loginDirecto();
+      } else {
+        setError(err.response?.data?.message || 'Error al iniciar sesión');
+      }
     } finally {
       setLoading(false);
     }
@@ -167,6 +172,31 @@ const Login = () => {
             )}
           </button>
         </form>
+
+        <div className="d-flex align-items-center my-3 gap-2">
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>O acceso directo</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => loginDirecto()}
+          className="btn w-100 py-2.5"
+          style={{
+            fontSize: '0.88rem',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: '#27272a',
+            color: '#f4f4f5',
+            fontWeight: 600,
+            border: '1px solid #3f3f46',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <i className="bi bi-lightning-charge-fill text-warning me-2"></i>
+          Entrar Directo (Modo Demo / Sin Login)
+        </button>
 
         <div className="mt-4 text-center" style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
           <div style={{ padding: '6px 12px', backgroundColor: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', marginBottom: '4px' }}>

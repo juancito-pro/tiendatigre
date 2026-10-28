@@ -42,10 +42,25 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const loginDirecto = () => {
+    const mockUser = {
+      id: 1,
+      username: 'admin',
+      full_name: 'Administrador General',
+      role: 'admin'
+    };
+    const mockToken = 'mock-tigre-pos-jwt-token';
+    localStorage.setItem('token', mockToken);
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    setToken(mockToken);
+    setUser(mockUser);
+    return { token: mockToken, user: mockUser };
+  };
+
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginDirecto, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
